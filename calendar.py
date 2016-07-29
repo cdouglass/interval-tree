@@ -28,21 +28,21 @@ class BinarySearchTree():
   def add(self, new_val):
     subtree = 'right' if self.key(new_val) > self.key(self.value) else 'left'
     if getattr(self, subtree) is None:
-      setattr(self, subtree, __class__(new_val, self.key))
+      node = self.__class__(new_val, key=self.key)
+      setattr(self, subtree, node)
     else:
       getattr(self, subtree).add(new_val)
 
 Event = namedtuple('Event', ['name', 'start_time', 'finish_time'])
 
 class IntervalTree(BinarySearchTree):
-  def __init__(self, event):
-    self.key = lambda ev: ev.start_time
-    self.value = event
+  def __init__(self, event, key=None): # key included for consistency with superclass, but not used
+    super().__init__(event, key=lambda ev: ev.start_time)
+    self.max = event.finish_time
 
   def add(self, event):
-    pass
+    self.max = max(self.max, event.finish_time)
+    super().add(event)
 
   def query(self, t):
     pass
-
-
