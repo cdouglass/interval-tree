@@ -60,5 +60,21 @@ class TestIntervalTree(unittest.TestCase):
     self.assertEqual(self.ev1, self.tree.search(0))
     self.assertEqual(self.ev2, self.tree.search(10))
 
+  def test_unsuccessful_search(self):
+    self.assertIsNone(self.tree.search(20))
+
+  def test_unsuccessful_query(self):
+    self.assertEqual(set(), self.tree.query(20))
+
+  def test_query_with_single_result(self):
+    self.assertEqual(set([self.ev2]), self.tree.query(10))
+    self.assertEqual(set([self.ev2]), self.tree.query(-3))
+
+  def test_query_with_two_results(self):
+    self.assertEqual(set([self.ev1, self.ev2]), self.tree.query(3))
+
+  def test_query_with_three_results(self):
+    self.assertEqual(set([self.ev1, self.ev2, self.ev3]), self.tree.query(1))
+
 if __name__ == "__main__":
   unittest.main()

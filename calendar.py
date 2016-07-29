@@ -17,7 +17,7 @@ class Calendar():
     if self.event_tree is None:
       return []
     else:
-      return self.event_tree.query(t)
+      return list(self.event_tree.query(t))
 
 class BinarySearchTree():
   def __init__(self, value, key=lambda x: x):
@@ -62,5 +62,13 @@ class IntervalTree(BinarySearchTree):
     else:
       return None
 
+  # not yet efficient at all
   def query(self, t):
-    pass
+    results = set()
+    if self.start_time() <= t < self.finish_time():
+      results.add(self.value)
+    if self.left:
+      results.update(self.left.query(t))
+    if self.right:
+      results.update(self.right.query(t))
+    return results
