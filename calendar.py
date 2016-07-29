@@ -40,9 +40,27 @@ class IntervalTree(BinarySearchTree):
     super().__init__(event, key=lambda ev: ev.start_time)
     self.max = event.finish_time
 
+  def start_time(self):
+    return self.value.start_time
+
+  def finish_time(self):
+    return self.value.finish_time
+
   def add(self, event):
     self.max = max(self.max, event.finish_time)
     super().add(event)
+
+  # half-open interval
+  # if at least one overlapping interval is present, this is guaranteed to find one
+  def search(self, t):
+    if self.start_time() <= t < self.finish_time():
+      return self.value
+    elif self.left and self.left.max > t:
+      return self.left.search(t)
+    elif self.right:
+      return self.right.search(t)
+    else:
+      return None
 
   def query(self, t):
     pass

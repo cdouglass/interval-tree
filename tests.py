@@ -28,23 +28,37 @@ class TestBinarySearchTree(unittest.TestCase):
     self.assertEqual(lists[2], tree.left.value)
 
 class TestIntervalTree(unittest.TestCase):
+
+  def setUp(self):
+    self.ev1 = Event('ev1', 0, 10)
+    self.ev2 = Event('ev2', -5, 15)
+    self.ev3 = Event('ev3', -2, 2)
+    self.tree = IntervalTree(self.ev1)
+    self.tree.add(self.ev2)
+    self.tree.add(self.ev3)
+
   def test_create_interval_tree(self):
-    tree = IntervalTree(Event('ev1', 0, 10))
+    tree = IntervalTree(self.ev1)
     self.assertEqual(10, tree.max)
     self.assertIsNone(tree.left)
     self.assertIsNone(tree.right)
-    ev2 = Event('ev2', -5, 15)
-    tree.add(ev2)
-    self.assertEqual(ev2, tree.left.value)
+    tree.add(self.ev2)
+    self.assertEqual(self.ev2, tree.left.value)
     self.assertEqual(15, tree.max)
     self.assertTrue(isinstance(tree.left, IntervalTree))
-    ev3 = Event('ev3', -2, 2)
-    tree.add(ev3)
-    self.assertEqual(ev3, tree.left.right.value)
+    tree.add(self.ev3)
+    self.assertEqual(self.ev3, tree.left.right.value)
     self.assertTrue(isinstance(tree.left.right, IntervalTree))
     self.assertEqual(15, tree.max)
     self.assertEqual(15, tree.left.max)
     self.assertEqual(2, tree.left.right.max)
+
+  def test_search_gives_root_interval_if_included(self):
+    self.assertEqual(self.ev1, self.tree.search(1))
+
+  def test_intervals_are_half_open(self):
+    self.assertEqual(self.ev1, self.tree.search(0))
+    self.assertEqual(self.ev2, self.tree.search(10))
 
 if __name__ == "__main__":
   unittest.main()
