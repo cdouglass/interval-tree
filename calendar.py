@@ -1,19 +1,20 @@
 from collections import namedtuple
+import sys
 
 class Calendar():
   def __init__(self):
-    self.clear()
+    self.event_tree = None
 
   def clear(self):
-    self.event_tree= None
+    self.event_tree = None
 
-  def add(event):
+  def add(self, event):
     if self.event_tree is None:
       self.event_tree = IntervalTree(event)
     else:
       self.event_tree.add(event)
 
-  def query(t):
+  def query(self, t):
     if self.event_tree is None:
       return []
     else:
@@ -51,12 +52,14 @@ class IntervalTree(BinarySearchTree):
     super().add(event)
 
   # half-open interval
-  # if at least one overlapping interval is present, this is guaranteed to find one
+  # if at least one overlapping interval is present, this finds the one with the earliest start time
   def search(self, t):
-    if self.start_time() <= t < self.finish_time():
+    if self.left and self.left.max > t:
+      result = self.left.search(t)
+      if result:
+        return result
+    elif self.start_time() <= t < self.finish_time():
       return self.value
-    elif self.left and self.left.max > t:
-      return self.left.search(t)
     elif self.right:
       return self.right.search(t)
     else:
@@ -72,3 +75,28 @@ class IntervalTree(BinarySearchTree):
     if self.right:
       results.update(self.right.query(t))
     return results
+
+def main(filename):
+  calendar = Calendar()
+  with open(filename) as f:
+    for line in f:
+      output = line.strip()
+      tokens = line.split()
+      if len(tokens) > 0:
+        command = tokens[0]
+        if command == "CLEAR":
+          calendar.clear()
+        elif command == "ADD":
+          event = Event(tokens[1], int(tokens[2]), int(tokens[3]))
+          calendar.add(event)
+        elif command == "QUERY":
+          t = int(tokens[1])
+          results = sorted([event.name for event in calendar.query(t)])
+          output = "QUERY %s: %s" %(t, ' '.join(results))
+      print(output)
+
+if __name__ == "__main__":
+  if len(sys.argv) > 1:
+    main(sys.argv[1])
+  else:
+    print("Missing required argument!\n usage: python3 calendar.py input_file")

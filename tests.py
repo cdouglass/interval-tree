@@ -53,12 +53,13 @@ class TestIntervalTree(unittest.TestCase):
     self.assertEqual(15, tree.left.max)
     self.assertEqual(2, tree.left.right.max)
 
-  def test_search_gives_root_interval_if_included(self):
-    self.assertEqual(self.ev1, self.tree.search(1))
+  def test_search_gives_leftmost_including_interval(self):
+    self.assertEqual(self.ev2, self.tree.search(1))
 
   def test_intervals_are_half_open(self):
-    self.assertEqual(self.ev1, self.tree.search(0))
+    self.assertEqual(self.ev2, self.tree.search(-5))
     self.assertEqual(self.ev2, self.tree.search(10))
+    self.assertIsNone(self.tree.search(15))
 
   def test_unsuccessful_search(self):
     self.assertIsNone(self.tree.search(20))
