@@ -18,7 +18,7 @@ class Calendar():
     if self.event_tree is None:
       return []
     else:
-      return list(self.event_tree.query(t))
+      return sorted([node.value for node in self.event_tree.query(t)], lambda ev: ev.name)
 
 class BinarySearchTree():
   def __init__(self, value, key=lambda x: x):
@@ -59,7 +59,7 @@ class IntervalTree(BinarySearchTree):
       if result:
         return result
     elif self.start_time() <= t < self.finish_time():
-      return self.value
+      return self
     elif self.right:
       return self.right.search(t)
     else:
@@ -69,7 +69,7 @@ class IntervalTree(BinarySearchTree):
   def query(self, t):
     results = set()
     if self.start_time() <= t < self.finish_time():
-      results.add(self.value)
+      results.add(self)
     if self.left:
       results.update(self.left.query(t))
     if self.right:
@@ -91,7 +91,7 @@ def main(filename):
           calendar.add(event)
         elif command == "QUERY":
           t = int(tokens[1])
-          results = sorted([event.name for event in calendar.query(t)])
+          results = [event.name for event in calendar.query(t)]
           output = "QUERY %s: %s" %(t, ' '.join(results))
       print(output)
 

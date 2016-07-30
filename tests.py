@@ -54,11 +54,11 @@ class TestIntervalTree(unittest.TestCase):
     self.assertEqual(2, tree.left.right.max)
 
   def test_search_gives_leftmost_including_interval(self):
-    self.assertEqual(self.ev2, self.tree.search(1))
+    self.assertEqual(self.ev2, self.tree.search(1).value)
 
   def test_intervals_are_half_open(self):
-    self.assertEqual(self.ev2, self.tree.search(-5))
-    self.assertEqual(self.ev2, self.tree.search(10))
+    self.assertEqual(self.ev2, self.tree.search(-5).value)
+    self.assertEqual(self.ev2, self.tree.search(10).value)
     self.assertIsNone(self.tree.search(15))
 
   def test_unsuccessful_search(self):
@@ -68,14 +68,14 @@ class TestIntervalTree(unittest.TestCase):
     self.assertEqual(set(), self.tree.query(20))
 
   def test_query_with_single_result(self):
-    self.assertEqual(set([self.ev2]), self.tree.query(10))
-    self.assertEqual(set([self.ev2]), self.tree.query(-3))
+    self.assertEqual(set([self.ev2]), {node.value for node in self.tree.query(10)})
+    self.assertEqual(set([self.ev2]), {node.value for node in self.tree.query(-3)})
 
   def test_query_with_two_results(self):
-    self.assertEqual(set([self.ev1, self.ev2]), self.tree.query(3))
+    self.assertEqual(set([self.ev1, self.ev2]), {node.value for node in self.tree.query(3)})
 
   def test_query_with_three_results(self):
-    self.assertEqual(set([self.ev1, self.ev2, self.ev3]), self.tree.query(1))
+    self.assertEqual(set([self.ev1, self.ev2, self.ev3]), {node.value for node in self.tree.query(1)})
 
 if __name__ == "__main__":
   unittest.main()
