@@ -1,5 +1,5 @@
 from calendar import BinarySearchTree, Event, IntervalTree
-from random import randint
+from random import randint, shuffle
 import unittest
 
 class TestBinarySearchTree(unittest.TestCase):
@@ -74,6 +74,13 @@ class TestIntervalTree(unittest.TestCase):
       tree.add(node)
     self.assertEqual(set([a, b, c, e]), {node.value for node in tree.query(50)})
 
+  def test_one_more(self):
+    events = [Event('a', 4354, 5527), Event('b', 3016, 5486), Event('c', 683, 6450), Event('d', 1375, 6181), Event('e', 9301, 9850), Event('f', 1128, 2945), Event('g', 7375, 8347)]
+    tree = IntervalTree(events[0])
+    for ev in events[1:]:
+      tree.add(ev)
+    self.assertEqual(set(['a', 'b', 'c', 'd']), {node.value.name for node in tree.query(5000)})
+
 class FuzzIntervalTree(unittest.TestCase):
   # t > 0
   def make_interval_set(self, t, n_matches, n_nonmatches):
@@ -81,7 +88,7 @@ class FuzzIntervalTree(unittest.TestCase):
     events = []
     for i in range(n_matches):
       start = randint(0, t)
-      end = randint(t, top)
+      end = randint(t + 1, top)
       name = "match_%s" %i
       events.append(Event(name, start, end))
     for j in range(n_nonmatches):
@@ -89,25 +96,28 @@ class FuzzIntervalTree(unittest.TestCase):
         start = randint(0, t - 1)
         end = randint(start, t - 1)
       else:
-        start = randint(t, top)
-        end = randint(start, top)
+        start = randint(t + 1, top)
+        end = randint(start + 1, top + 1)
       name = "nonmatch_%s" %j
       events.append(Event(name, start, end))
+    shuffle(events)
     return events
 
+  def randomly_test_query_counts(self):
+    t = randint(1, 9999)
+    match_count = randint(0, 200)
+    nonmatches = randint(0, 200)
+    events = self.make_interval_set(t, match_count, nonmatches)
+    if len(events) > 0:
+      tree = IntervalTree(events[0])
+      for event in events[1:]:
+        tree.add(event)
+      matches = tree.query(t)
+      self.assertEqual(match_count, len(matches))
+
   def test_query_counts(self):
-    t = 5000
-    events = self.make_interval_set(t, 4, 3)
-    tree = IntervalTree(events[0])
-    for event in events[1:]:
-      tree.add(event)
-    matches = tree.query(t)
-    for match in matches:
-      print(match.value.name)
-    print("...........")
-    for event in events:
-      print("%s %s %s" %(event.name, event.start_time, event.finish_time) )
-    self.assertEqual(4, len(matches))
+    for i in range(1000):
+      self.randomly_test_query_counts()
 
 if __name__ == "__main__":
   unittest.main()

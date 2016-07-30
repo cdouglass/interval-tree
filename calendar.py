@@ -93,7 +93,7 @@ class IntervalTree(BinarySearchTree):
       current = next_result.parent
       while current:
         candidate_maxes = [shadow_max(node) for node in [current.left, current.right] if node]
-        if current.value not in shadow_maxes:
+        if current not in results:
           candidate_maxes.append(current.finish_time())
         shadow_maxes[current.value] = max_with_none(candidate_maxes)
         current = current.parent
