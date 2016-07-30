@@ -1,5 +1,5 @@
 from collections import namedtuple
-from math import log
+from math import floor, log
 import sys
 
 class Calendar():
@@ -27,6 +27,7 @@ class BinarySearchTree():
     self.value = value
     self.left = self.right = self.parent = None
     self.weight = 1
+    self.alpha = 0.75
 
   def update(self):
     self.weight = 1 + sum([child.weight for child in self.children()])
@@ -34,6 +35,17 @@ class BinarySearchTree():
   # TODO use this more often - could clean up interval tree stuff
   def children(self): # convenience 
     return [node for node in [self.left, self.right] if node]
+
+  # should never be called unless there's a non-weight-balanced ancestor
+  def rebalance(self):
+    if self.is_weight_balanced():
+      self.parent.rebalance()
+    else:
+      self.rebuild()
+
+  def is_weight_balanced(self):
+    child_weights = [child.weight for child in self.children()]
+    return not (max(child_weights) > self.alpha * self.weight)
 
   def rebuild(self):
     values = [self.value]
@@ -45,8 +57,12 @@ class BinarySearchTree():
     values.sort(key=self.key)
     tree = self.build(values)
     self.value = tree.value
-    self.left = tree.left
-    self.right = tree.right
+    if tree.left:
+      self.left = tree.left
+      tree.left.parent = self
+    if tree.right:
+      self.right = tree.right
+      tree.right.parent = self
     self.update()
 
   def build(self, values):
@@ -68,14 +84,23 @@ class BinarySearchTree():
         chunks.append(right)
     return root
 
-  def add(self, new_val):
-    subtree = 'right' if self.key(new_val) > self.key(self.value) else 'left'
-    if getattr(self, subtree) is None:
-      node = self.__class__(new_val, key=self.key)
-      node.parent = self
-      setattr(self, subtree, node)
+  def add(self, new_val, size=None, depth=0):
+    self.weight += 1
+    size = size or self.weight
+    if self.key(new_val) > self.key(self.value):
+      if self.right:
+        self.right.add(new_val, size=size, depth=depth+1)
+      else:
+        self.right = self.__class__(new_val, key=self.key)
+        self.right.parent = self
     else:
-      getattr(self, subtree).add(new_val)
+      if self.left:
+        self.left.add(new_val, size=size, depth=depth+1)
+      else:
+        self.left = self.__class__(new_val, key=self.key)
+        self.left.parent = self
+    if depth + 1 > floor(log(size, 1.0 / self.alpha)):
+      self.rebalance()
     self.update()
 
 Event = namedtuple('Event', ['name', 'start_time', 'finish_time'])
@@ -100,8 +125,8 @@ class IntervalTree(BinarySearchTree):
   def finish_time(self):
     return self.value.finish_time
 
-  def add(self, event):
-    super().add(event)
+  def add(self, event, size=None, depth=0):
+    super().add(event, size, depth)
 
   def query(self, t):
     shadow_maxes = {}
@@ -140,7 +165,7 @@ class IntervalTree(BinarySearchTree):
     next_result = shadowed_search(self, t)
     while next_result:
       results.add(next_result)
-      shadow_maxes[next_result.value] = max_with_none([shadow_max(node) for node in [next_result.left, next_result.right] if node])
+      shadow_maxes[next_result.value] = max_with_none([shadow_max(node) for node in next_result.children()])
       current = next_result.parent
       while current:
         candidate_maxes = [shadow_max(node) for node in [current.left, current.right] if node]
