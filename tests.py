@@ -1,4 +1,5 @@
 from calendar import BinarySearchTree, Event, IntervalTree
+from random import randint
 import unittest
 
 class TestBinarySearchTree(unittest.TestCase):
@@ -12,11 +13,6 @@ class TestBinarySearchTree(unittest.TestCase):
     self.assertEqual(6, tree.right.value)
     self.assertEqual(3, tree.left.value)
     self.assertEqual(5, tree.left.right.value)
-#        5
-#      /   \
-#     3     6
-#       \
-#        5
 
   def test_bst_with_custom_comparator(self):
     tree = BinarySearchTree([3, 2, 1], lambda lst: lst[-1])
@@ -77,6 +73,41 @@ class TestIntervalTree(unittest.TestCase):
     for node in [b, c, d, e]:
       tree.add(node)
     self.assertEqual(set([a, b, c, e]), {node.value for node in tree.query(50)})
+
+class FuzzIntervalTree(unittest.TestCase):
+  # t > 0
+  def make_interval_set(self, t, n_matches, n_nonmatches):
+    top = 10000
+    events = []
+    for i in range(n_matches):
+      start = randint(0, t)
+      end = randint(t, top)
+      name = "match_%s" %i
+      events.append(Event(name, start, end))
+    for j in range(n_nonmatches):
+      if randint(0, 1):
+        start = randint(0, t - 1)
+        end = randint(start, t - 1)
+      else:
+        start = randint(t, top)
+        end = randint(start, top)
+      name = "nonmatch_%s" %j
+      events.append(Event(name, start, end))
+    return events
+
+  def test_query_counts(self):
+    t = 5000
+    events = self.make_interval_set(t, 4, 3)
+    tree = IntervalTree(events[0])
+    for event in events[1:]:
+      tree.add(event)
+    matches = tree.query(t)
+    for match in matches:
+      print(match.value.name)
+    print("...........")
+    for event in events:
+      print("%s %s %s" %(event.name, event.start_time, event.finish_time) )
+    self.assertEqual(4, len(matches))
 
 if __name__ == "__main__":
   unittest.main()
