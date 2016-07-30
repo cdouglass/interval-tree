@@ -15,7 +15,8 @@ class TestBinarySearchTree(unittest.TestCase):
     self.assertEqual(5, tree.left.right.value)
 
   def test_bst_with_custom_comparator(self):
-    tree = BinarySearchTree([3, 2, 1], lambda lst: lst[-1])
+    tree = BinarySearchTree([3, 2, 1])
+    setattr(tree, 'key', lambda lst: lst[-1])
     lists = [[1, 2, 3, 4, 5], [0, 0, 10], [2, 0]]
     for lst in lists:
       tree.add(lst)
@@ -109,10 +110,10 @@ class FuzzIntervalTree(unittest.TestCase):
     nonmatches = randint(0, 200)
     events = self.make_interval_set(t, match_count, nonmatches)
     if len(events) > 0:
-      tree = IntervalTree(events[0])
-      for event in events[1:]:
-        tree.add(event)
-      matches = tree.query(t)
+      tree = IntervalTree(events[0]) # TODO this is just silly
+      newtree = tree.build(events)
+      newtree.rebuild()
+      matches = newtree.query(t)
       self.assertEqual(match_count, len(matches))
 
   def test_query_counts(self):

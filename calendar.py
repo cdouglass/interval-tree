@@ -1,4 +1,5 @@
 from collections import namedtuple
+from math import log
 import sys
 
 class Calendar():
@@ -25,6 +26,47 @@ class BinarySearchTree():
     self.key = key
     self.value = value
     self.left = self.right = self.parent = None
+    self.weight = 1
+
+  def update(self):
+    self.weight = 1 + sum([child.weight for child in self.children()])
+
+  # TODO use this more often - could clean up interval tree stuff
+  def children(self): # convenience 
+    return [node for node in [self.left, self.right] if node]
+
+  def rebuild(self):
+    values = [self.value]
+    nodes = self.children()
+    while len(nodes) > 0:
+      node = nodes.pop()
+      values.append(node.value)
+      nodes += node.children()
+    values.sort(key=self.key)
+    tree = self.build(values)
+    self.value = tree.value
+    self.left = tree.left
+    self.right = tree.right
+    self.update()
+
+  def build(self, values):
+    if len(values) == 0:
+      return None
+    midpoint = int(len(values) / 2)
+    root = self.__class__(values[midpoint], self.key)
+    chunks = [chunk for chunk in [values[0: midpoint], values[midpoint + 1:]] if chunk]
+    while len(chunks) > 0:
+      chunk = chunks.pop(0)
+      midpoint = int(len(chunk) / 2)
+      value = chunk[midpoint]
+      root.add(value)
+      left = chunk[0: midpoint]
+      if left:
+        chunks.append(left)
+      right = chunk[midpoint + 1:]
+      if right:
+        chunks.append(right)
+    return root
 
   def add(self, new_val):
     subtree = 'right' if self.key(new_val) > self.key(self.value) else 'left'
@@ -34,6 +76,7 @@ class BinarySearchTree():
       setattr(self, subtree, node)
     else:
       getattr(self, subtree).add(new_val)
+    self.update()
 
 Event = namedtuple('Event', ['name', 'start_time', 'finish_time'])
 
@@ -42,6 +85,15 @@ class IntervalTree(BinarySearchTree):
     super().__init__(event, key=lambda ev: ev.start_time)
     self.max = event.finish_time
 
+  def update(self):
+    super().update()
+    candidates = [self.finish_time()]
+    if self.right:
+      candidates.append(self.right.max)
+    if self.left:
+      candidates.append(self.left.max)
+    self.max = max(candidates)
+
   def start_time(self):
     return self.value.start_time
 
@@ -49,7 +101,6 @@ class IntervalTree(BinarySearchTree):
     return self.value.finish_time
 
   def add(self, event):
-    self.max = max(self.max, event.finish_time)
     super().add(event)
 
   def query(self, t):
