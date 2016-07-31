@@ -4,6 +4,8 @@ I used a binary search tree of events, ordered by start time and augmented with 
 
 In querying for a given time, I use a search process that finds the matching event with the earliest start date. Each time a match is found, I update a dictionary of shadow values for the max fields, matching each event to the max its node would have if the newly matched node were missing from the calendar.
 
+The base search tree is a scapegoat tree without deletion, which means that it is guaranteed to remain height-balanced - its height will always be O(log n).
+
 ##Usage##
 Install python3 if needed, then run
 ```
@@ -14,9 +16,12 @@ $ python3 calendar.py input.txt
 
 ###Add###
 ####Time####
-Adding an element requires navigating down the tree until an empty leaf slot is found. A constant number of operations (comparing start times, updating max) is performed at each level, so this will take time proportional to the depth of the tree. In the average case we expect the tree to be more or less balanced, having height O(log n) where n is the number of events stored in the calendar. Worst-case runtime, when the tree is completely unbalanced, will be O(n). Hereafter I will describe this as O(h).
+Adding an element requires navigating down the tree until an empty leaf slot is found. Most of the time a constant number of operations (comparing start times, updating max) is performed at each level, so this will take time proportional to the height of the tree, which is O(log n). The exception is when adding the new node violates the height-balance property of the scapegoat tree. In this case, the deepest ancestor of that node that is not weight-balanced will be selected as a scapegoat and the subtree rooted at that node will be entirely rebuilt.
+
+Rebuilding a subtree takes time proportional to the size of that subtree. Therefore the worst-case time to add an element is O(n). However a rebuild will be required so rarely that this will not affect the average asymptotic complexity of the add operation.
+
 ####Space####
-O(1) additional space will be required to store the new event in the calendar. While the event is being added, at each level of the tree a new call to `add` will use a constant amount of stack space as Python does not optimize tail calls. This gives us O(h) space usage.
+O(1) additional space will be required to store the new event in the calendar. While the event is being added, at each level of the tree a new call to `add` will use a constant amount of stack space as Python does not optimize tail calls. This gives us O(h) = O(log n) space usage. In the rare event that a rebuild is required, the entire subtree being rebuilt will be flattened and all its values stored in memory, giving worst-case O(n) additional space usage.
 
 ###Query###
 ####Time####
