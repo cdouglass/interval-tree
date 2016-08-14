@@ -68,12 +68,15 @@ class BinarySearchTree():
       return None
     midpoint = int(len(values) / 2)
     root = self.__class__(values[midpoint], self.key)
-    chunks = [chunk for chunk in [values[0: midpoint], values[midpoint + 1:]] if chunk]
-    while len(chunks) > 0:
-      chunk = chunks.pop(0)
-      midpoint = int(len(chunk) / 2)
-      root.add(chunk[midpoint])
-      chunks += [ch for ch in [chunk[0: midpoint], chunk[midpoint + 1:]] if ch]
+    left_vals, right_vals = [values[0: midpoint], values[midpoint + 1:]]
+    left, right = self.build(left_vals), self.build(right_vals)
+    if left:
+      root.left = left
+      left.parent = root
+    if right:
+      root.right = right
+      right.parent = root
+    root.update()
     return root
 
   def add(self, new_val, size=None, depth=0):
@@ -133,7 +136,7 @@ class IntervalTree(BinarySearchTree):
         return node.max
 
     # half-open interval
-    # if at least one overlapping interval is present, this finds the one with the earliest start time
+    # if at least one overlapping interval is present, this finds the one furthest left in the tree, ie with the earliest start time
     def shadowed_search(node, t):
       if shadow_max(node.left) and shadow_max(node.left) > t:
         result = shadowed_search(node.left, t)
