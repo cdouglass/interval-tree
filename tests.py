@@ -121,21 +121,28 @@ class FuzzIntervalTree(unittest.TestCase):
       nonmatches.append(Event(name, start, end))
     events = matches + nonmatches
     shuffle(events)
-    return [events, len(matches), len(nonmatches)]
+    return events
 
   def randomly_test_query_counts(self):
-    t = randint(0, 9999)
+    rseed = randint(0, 1000000000)
+    seed(rseed)
+    t = randint(1, 9999)
     match_count = randint(0, 200)
     nonmatches = randint(0, 200)
-    events, m, n = self.make_interval_set(t, match_count, nonmatches)
+    events = self.make_interval_set(t, match_count, nonmatches)
     if len(events) > 0:
       tree = IntervalTree(events[0])
-      newtree = tree.build(events)
-      matches = newtree.query(t)
-      self.assertEqual(m, len(matches))
+      for e in events:
+        tree.add(e)
+      matches = tree.query(t)
+      try:
+        self.assertEqual(match_count, len(matches))
+      except:
+        print("failed with seed %s" %rseed)
+        raise
 
   def test_query_counts(self):
-    for i in range(10000):
+    for i in range(1000):
       self.randomly_test_query_counts()
 
 if __name__ == "__main__":
