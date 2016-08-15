@@ -32,7 +32,7 @@ class BinarySearchTree():
   def update(self):
     self.weight = 1 + sum([child.weight for child in self.children()])
 
-  def children(self): # convenience 
+  def children(self):
     return [node for node in [self.left, self.right] if node]
 
   # should never be called unless there's a non-weight-balanced ancestor
@@ -57,10 +57,10 @@ class BinarySearchTree():
     self.value = tree.value
     if tree.left:
       self.left = tree.left
-      tree.left.parent = self
+      self.left.parent = self
     if tree.right:
       self.right = tree.right
-      tree.right.parent = self
+      self.right.parent = self
     self.update()
 
   def build(self, values):
@@ -77,6 +77,9 @@ class BinarySearchTree():
     return root
 
   def add(self, new_val, size=None, depth=0):
+    # while allowing elements with equal keys is compatible with searchability if such elements are only found in each others' left subtree, never in the right, this is not compatible with maintaining a balanced tree
+    if self.key(new_val) == self.key(self.value):
+      return None
     self.weight += 1
     size = size or self.weight
     is_greater = self.key(new_val) > self.key(self.value)
@@ -98,8 +101,8 @@ class BinarySearchTree():
 Event = namedtuple('Event', ['name', 'start_time', 'finish_time'])
 
 class IntervalTree(BinarySearchTree):
-  def __init__(self, event, key=None): # key included for consistency with superclass, but not used
-    super().__init__(event, key=lambda ev: ev.start_time)
+  def __init__(self, event, key=lambda ev: [ev.start_time, ev.finish_time, ev.name]):
+    super().__init__(event, key=key)
     self.max = event.finish_time
 
   def update(self):
