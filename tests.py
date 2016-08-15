@@ -1,5 +1,5 @@
 from calendar import BinarySearchTree, Event, IntervalTree
-from random import randint, shuffle
+from random import randint, seed, shuffle
 import unittest
 
 class TestBinarySearchTree(unittest.TestCase):
@@ -23,6 +23,12 @@ class TestBinarySearchTree(unittest.TestCase):
     self.assertEqual(lists[0], tree.right.value)
     self.assertEqual(lists[1], tree.right.right.value)
     self.assertEqual(lists[2], tree.left.value)
+
+  def test_self_balancing(self):
+    values = range(1, 64)
+    tree = BinarySearchTree(0)
+    for val in values:
+      tree.add(val)
 
 class TestIntervalTree(unittest.TestCase):
 
@@ -110,13 +116,13 @@ class FuzzIntervalTree(unittest.TestCase):
     nonmatches = randint(0, 200)
     events = self.make_interval_set(t, match_count, nonmatches)
     if len(events) > 0:
-      tree = IntervalTree(events[0]) # TODO this is just silly
+      tree = IntervalTree(events[0])
       newtree = tree.build(events)
-      newtree.rebuild()
       matches = newtree.query(t)
       self.assertEqual(match_count, len(matches))
 
   def test_query_counts(self):
+    #seed(34235251)
     for i in range(1000):
       self.randomly_test_query_counts()
 

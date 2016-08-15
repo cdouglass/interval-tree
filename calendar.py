@@ -27,12 +27,11 @@ class BinarySearchTree():
     self.value = value
     self.left = self.right = self.parent = None
     self.weight = 1
-    self.alpha = 0.75
+    self.alpha = 0.75 # arbitrary constant between 0.5 and 1
 
   def update(self):
     self.weight = 1 + sum([child.weight for child in self.children()])
 
-  # TODO use this more often - could clean up interval tree stuff
   def children(self): # convenience 
     return [node for node in [self.left, self.right] if node]
 
@@ -45,16 +44,15 @@ class BinarySearchTree():
 
   def is_weight_balanced(self):
     child_weights = [child.weight for child in self.children()]
-    return not (max(child_weights) > self.alpha * self.weight)
+    return max(child_weights) <= self.alpha * self.weight
+
+  def flatten(self):
+    left = self.left.flatten() if self.left else []
+    right = self.right.flatten() if self.right else []
+    return left + [self.value] + right
 
   def rebuild(self):
-    values = [self.value]
-    nodes = self.children()
-    while len(nodes) > 0:
-      node = nodes.pop()
-      values.append(node.value)
-      nodes += node.children()
-    values.sort(key=self.key)
+    values = self.flatten()
     tree = self.build(values)
     self.value = tree.value
     if tree.left:
@@ -74,33 +72,27 @@ class BinarySearchTree():
     while len(chunks) > 0:
       chunk = chunks.pop(0)
       midpoint = int(len(chunk) / 2)
-      value = chunk[midpoint]
-      root.add(value)
-      left = chunk[0: midpoint]
-      if left:
-        chunks.append(left)
-      right = chunk[midpoint + 1:]
-      if right:
-        chunks.append(right)
+      root.add(chunk[midpoint])
+      chunks += [ch for ch in [chunk[0: midpoint], chunk[midpoint + 1:]] if ch]
     return root
 
   def add(self, new_val, size=None, depth=0):
     self.weight += 1
     size = size or self.weight
-    if self.key(new_val) > self.key(self.value):
-      if self.right:
-        self.right.add(new_val, size=size, depth=depth+1)
-      else:
-        self.right = self.__class__(new_val, key=self.key)
-        self.right.parent = self
+    is_greater = self.key(new_val) > self.key(self.value)
+    if is_greater and self.right:
+      self.right.add(new_val, size=size, depth=depth+1)
+    elif self.left and not is_greater:
+      self.left.add(new_val, size=size, depth=depth+1)
     else:
-      if self.left:
-        self.left.add(new_val, size=size, depth=depth+1)
+      node = self.__class__(new_val, key=self.key)
+      node.parent = self
+      if is_greater:
+        self.right = node
       else:
-        self.left = self.__class__(new_val, key=self.key)
-        self.left.parent = self
-    if depth + 1 > floor(log(size, 1.0 / self.alpha)):
-      self.rebalance()
+        self.left = node
+      if depth + 1 > floor(log(size, 1.0 / self.alpha)):
+        self.rebalance()
     self.update()
 
 Event = namedtuple('Event', ['name', 'start_time', 'finish_time'])
@@ -112,12 +104,7 @@ class IntervalTree(BinarySearchTree):
 
   def update(self):
     super().update()
-    candidates = [self.finish_time()]
-    if self.right:
-      candidates.append(self.right.max)
-    if self.left:
-      candidates.append(self.left.max)
-    self.max = max(candidates)
+    self.max = max([self.finish_time()] + [node.max for node in self.children()])
 
   def start_time(self):
     return self.value.start_time
@@ -125,19 +112,13 @@ class IntervalTree(BinarySearchTree):
   def finish_time(self):
     return self.value.finish_time
 
-  def add(self, event, size=None, depth=0):
-    super().add(event, size, depth)
-
   def query(self, t):
     shadow_maxes = {}
     results = set()
 
     def max_with_none(lst):
       non_none = [i for i in lst if i is not None]
-      if len(non_none) > 0:
-        return max(non_none)
-      else:
-        return None
+      return max(non_none) if non_none else None
 
     # may be None
     def shadow_max(node):
